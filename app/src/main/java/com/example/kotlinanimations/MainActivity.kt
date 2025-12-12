@@ -1,5 +1,8 @@
 package com.example.kotlinanimations
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.graphics.Rect
 import android.os.Bundle
@@ -10,6 +13,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -28,9 +32,10 @@ import com.example.kotlinanimations.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
-
     private var _binding: ActivityMainBinding? = null
     private val binding get() = _binding!!
+
+    private var isExpanded = false
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,26 +49,105 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        val titles: MutableList<String> = ArrayList()
-        for (i in 0..4) {
-            titles.add(String.format("Item %d", i + 1))
-        }
-        createViews(binding.transitionsContainer, titles)
-        binding.button.setOnClickListener {
-            TransitionManager.beginDelayedTransition(binding.transitionsContainer, ChangeBounds())
-            titles.shuffle()
-            createViews(binding.transitionsContainer, titles)
+        setFAB()
+    }
+
+    private fun setFAB() {
+        setInitialState()
+
+        binding.fab.setOnClickListener {
+            if (isExpanded) {
+                collapseFab()
+            } else {
+                expandFAB()
+            }
         }
     }
 
-    private fun createViews(layout: ViewGroup, titles: List<String>) {
-        layout.removeAllViews()
-        for (title in titles) {
-            val textView = TextView(this)
-            textView.text = title
-            textView.gravity = Gravity.CENTER_HORIZONTAL
-            ViewCompat.setTransitionName(textView, title)//У каждого View уникальный id!!!
-            layout.addView(textView)
+    private fun setInitialState() {
+        binding.transparentBackground.apply {
+            alpha = 0f
         }
+        binding.optionTwoContainer.apply {
+            alpha = 0f
+            isClickable = false
+        }
+        binding.optionOneContainer.apply {
+            alpha = 0f
+            isClickable = false
+        }
+    }
+
+    private fun expandFAB() {
+        isExpanded = true
+        ObjectAnimator.ofFloat(binding.plusImageview, "rotation", 0f, 225f).start()
+        ObjectAnimator.ofFloat(binding.optionTwoContainer, "translationY", -130f).start()
+        ObjectAnimator.ofFloat(binding.optionOneContainer, "translationY", -250f).start()
+
+        binding.optionTwoContainer.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    binding.optionTwoContainer.isClickable = true
+                    binding.optionTwoContainer.setOnClickListener {
+                        Toast.makeText(this@MainActivity, "Option 2", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            })
+        binding.optionOneContainer.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    binding.optionOneContainer.isClickable = true
+                    binding.optionOneContainer.setOnClickListener {
+                        Toast.makeText(this@MainActivity, "Option 1", Toast.LENGTH_SHORT)
+                            .show()
+                    }
+                }
+            })
+        binding.transparentBackground.animate()
+            .alpha(0.9f)
+            .setDuration(300)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    binding.transparentBackground.isClickable = true
+                }
+            })
+    }
+
+    private fun collapseFab() {
+        isExpanded = false
+        ObjectAnimator.ofFloat(binding.plusImageview, "rotation", 0f, -180f).start()
+        ObjectAnimator.ofFloat(binding.optionTwoContainer, "translationY", 0f).start()
+        ObjectAnimator.ofFloat(binding.optionOneContainer, "translationY", 0f).start()
+
+        binding.optionTwoContainer.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    binding.optionTwoContainer.isClickable = false
+                    binding.optionOneContainer.setOnClickListener(null)
+                }
+            })
+        binding.optionOneContainer.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    binding.optionOneContainer.isClickable = false
+                }
+            })
+        binding.transparentBackground.animate()
+            .alpha(0f)
+            .setDuration(300)
+            .setListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    binding.transparentBackground.isClickable = false
+                }
+            })
     }
 }
